@@ -19,9 +19,10 @@
         #result { margin-top: 25px; display: none; }
         #videoTitle { color: #eee; font-size: 14px; margin-bottom: 15px; font-style: italic; }
         
-        .download-btn { background: #00ea96; color: #000; text-decoration: none; display: block; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .download-btn { background: #00ea96; color: #000; text-decoration: none; display: block; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; font-size: 16px; }
         .download-btn:hover { background: #00c47e; }
-        .status-text { font-size: 12px; color: #ff007f; margin-top: 8px; display: none; }
+        .mobile-tip { background: rgba(255, 255, 255, 0.05); border-left: 4px solid #ff007f; padding: 12px; border-radius: 6px; text-align: left; margin-top: 20px; font-size: 13px; color: #ccc; line-height: 1.5; }
+        .mobile-tip strong { color: #00f2fe; }
     </style>
 </head>
 <body>
@@ -39,18 +40,23 @@
         <div style="color: #00ea96; font-weight: bold; margin-bottom: 10px;">🎯 Video Hazır!</div>
         <div id="videoTitle"></div>
         
-        <div id="downloadBtn" class="download-btn" onclick="directDownload()">📥 Videoyu Cihaza İndir</div>
-        <div id="downloadStatus" class="status-text">İndirme başlatılıyor...</div>
+        <a href="#" id="downloadLink" target="_blank" class="download-btn">📥 Videoyu Aç ve İndir</a>
+        
+        <div class="mobile-tip">
+            ℹ️ <strong>Nasıl Kaydedilir?</strong><br>
+            Butona bastığınızda video yeni bir sayfada açılacaktır. 
+            <br>• <strong>Android / PC:</strong> Videonun sağ altındaki <strong>üç noktaya</strong> basıp <strong>İndir</strong> deyin veya videonun üzerine basılı tutup kaydedin.
+            <br>• <strong>iPhone (Safari):</strong> Alttaki <strong>Paylaş</strong> butonuna basıp <strong>"Dosyalara Kaydet"</strong> seçeneğini kullanın.
+        </div>
     </div>
 </div>
 
 <script>
-    let rawVideoUrl = "";
-
     async function processVideo() {
         const link = document.getElementById('videoLink').value;
         const loader = document.getElementById('loading');
         const resultDiv = document.getElementById('result');
+        const downloadLink = document.getElementById('downloadLink');
         const videoTitle = document.getElementById('videoTitle');
 
         if (!link) {
@@ -74,46 +80,15 @@
             if (data.success) {
                 resultDiv.style.display = 'block';
                 videoTitle.innerText = data.title;
-                // TikTok'un asıl video linkini doğrudan hafızaya alıyoruz
-                rawVideoUrl = data.download_url;
+                
+                // Hiçbir kısıtlamaya takılmayan doğrudan güvenli yönlendirme linki
+                downloadLink.href = data.download_url;
             } else {
                 alert(data.message);
             }
         } catch (error) {
             loader.style.display = 'none';
             alert('Bir hata oluştu, lütfen tekrar deneyin.');
-        }
-    }
-
-    // SUNUCUYU ARAYA SOKMADAN DİREKT TARAYICIYA İNDİRTEN SİSTEM
-    async function directDownload() {
-        const statusText = document.getElementById('downloadStatus');
-        if (!rawVideoUrl) return;
-
-        statusText.style.display = "block";
-        statusText.innerText = "Bağlantı kuruluyor, lütfen bekleyin...";
-
-        try {
-            // Sunucu üzerinden değil, direkt kullanıcının tarayıcısından videoyu çekiyoruz
-            const response = await fetch(rawVideoUrl);
-            const blob = await response.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = blobUrl;
-            a.download = 'tiktok_video.mp4';
-            
-            document.body.appendChild(a);
-            a.click();
-            
-            window.URL.revokeObjectURL(blobUrl);
-            document.body.removeChild(a);
-            statusText.innerText = "İndirme Başladı!";
-        } catch (error) {
-            // Eğer tarayıcı doğrudan indirmeyi engellerse (CORS kilidi), güvenli şekilde yeni sekmede açtırıyoruz
-            statusText.innerText = "Video yeni sekmede açılıyor, basılı tutup kaydedebilirsiniz.";
-            window.open(rawVideoUrl, '_blank');
         }
     }
 </script>
