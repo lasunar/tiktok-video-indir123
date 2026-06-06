@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response, stream_with_context
 import requests
 
 app = Flask(__name__)
@@ -34,6 +34,29 @@ def fetch_video():
         
     result = get_tiktok_video(tiktok_url)
     return jsonify(result)
+
+# RENDER'I ÇÖKERTMEYEN, DİREKT İNDİRTEN YENİ KÖPRÜ (STREAM)
+@app.route('/proxy-download')
+def proxy_download():
+    video_url = request.args.get('url')
+    if not video_url:
+        return "Link bulunamadı", 400
+        
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        req = requests.get(video_url, headers=headers, stream=True)
+        
+        # Videoyu sunucuda bekletmeden direkt telefona akıtıyoruz
+        def generate():
+            for chunk in req.iter_content(chunk_size=8192):
+                if chunk:
+                    yield chunk
+
+        response = Response(stream_with_context(generate()), content_type='video/mp4')
+        response.headers['Content-Disposition'] = 'attachment; filename=tiktok_video.mp4'
+        return response
+    except Exception as e:
+        return str(e), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
