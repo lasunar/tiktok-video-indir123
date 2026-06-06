@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify
 import requests
 
 app = Flask(__name__)
@@ -34,25 +34,6 @@ def fetch_video():
         
     result = get_tiktok_video(tiktok_url)
     return jsonify(result)
-
-# MOBİL VE PC ENGELLERİNİ AŞAN GÜVENLİ İNDİRME KÖPRÜSÜ (CORS BYPASS)
-@app.route('/proxy-download')
-def proxy_download():
-    video_url = request.args.get('url')
-    if not video_url:
-        return "Link bulunamadı", 400
-        
-    # TikTok sunucusundaki videoyu arkadan çekip tarayıcının güvenliğini aşmasını sağlıyoruz
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    }
-    req = requests.get(video_url, headers=headers, stream=True)
-    
-    response = Response(req.iter_content(chunk_size=4096), content_type='video/mp4')
-    # Tarayıcılara kesin indirme emri ve CORS izni veriyoruz
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Content-Disposition'] = 'attachment; filename=tiktok_video.mp4'
-    return response
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
