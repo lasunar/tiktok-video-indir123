@@ -21,7 +21,7 @@
         .download-btn { background: #00ea96; color: #000; text-decoration: none; display: block; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; }
         
         /* Mobil İpuçları Alanı */
-        .mobile-tip { background: rgba(255, 255, 255, 0.05); border-left: 4px solid #ff007f; padding: 12px; border-radius: 6px; text-align: left; margin-top: 20px; font-size: 13px; color: #ccc; line-height: 1.5; }
+        .mobile-tip { display: none; background: rgba(255, 255, 255, 0.05); border-left: 4px solid #ff007f; padding: 12px; border-radius: 6px; text-align: left; margin-top: 20px; font-size: 13px; color: #ccc; line-height: 1.5; }
         .mobile-tip strong { color: #00f2fe; }
     </style>
 </head>
@@ -39,11 +39,10 @@
     <div id="result">
         <p style="color: #00ea96; font-weight: bold;">🎯 Video Hazır!</p>
         <div id="videoTitle"></div>
-        <a href="#" id="downloadLink" target="_blank" class="download-btn">Videoyu Aç / İndir</a>
+        <a href="#" id="downloadLink" class="download-btn">Videoyu İndir (Logosuz)</a>
         
-        <!-- Tarayıcı inat ederse mobildeki kullanıcıların işini çözecek alan -->
-        <div class="mobile-tip">
-            ℹ️ <strong>Mobil Kullanıcılar İçin:</strong> Butona bastığınızda video doğrudan inmezse, açılan ekranda videonun üzerine <strong>basılı tutarak "Videoyu İndir/Kaydet"</strong> deyin. iPhone/Safari'de ise alttaki <strong>Paylaş</strong> butonuna basıp <strong>"Dosyalara Kaydet"</strong> seçeneğini kullanabilirsiniz.
+        <div class="mobile-tip" id="mobileTip">
+            ℹ️ <strong>Mobil Kullanıcı Notu:</strong> Açılan sayfada videonun üzerine <strong>basılı tutarak kaydet</strong> diyebilirsiniz. iPhone'da ise alttaki paylaş butonundan <strong>Dosyalara Kaydet</strong> yapabilirsiniz.
         </div>
     </div>
 </div>
@@ -55,6 +54,7 @@
         const resultDiv = document.getElementById('result');
         const downloadLink = document.getElementById('downloadLink');
         const videoTitle = document.getElementById('videoTitle');
+        const mobileTip = document.getElementById('mobileTip');
 
         if (!link) {
             alert('Lütfen bir TikTok linki yapıştırın!');
@@ -78,8 +78,21 @@
                 resultDiv.style.display = 'block';
                 videoTitle.innerText = data.title;
                 
-                // Güvenli ve doğrudan yönlendirme linki
-                downloadLink.href = data.download_url;
+                // KULLANICI CİHAZINI KONTROL EDİYORUZ (Mobil mi PC mi?)
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                
+                if (isMobile) {
+                    // Telefondaysa: Eski sistem gibi yeni sekmede asıl video linkini açıp izletecek ve kaydettirecek
+                    downloadLink.href = data.download_url;
+                    downloadLink.target = "_blank";
+                    mobileTip.style.display = "block"; // Mobil uyarı kutusunu göster
+                } else {
+                    // Bilgisayardaysa: Senin tıkır tıkır çalışan direkt indirme köprünü tetikleyecek
+                    downloadLink.href = `/download-file?url=${encodeURIComponent(data.download_url)}`;
+                    downloadLink.removeAttribute('target');
+                    mobileTip.style.display = "none"; // PC'de uyarıya gerek yok
+                }
+                
             } else {
                 alert(data.message);
             }
