@@ -21,7 +21,7 @@
         
         .download-btn { background: #00ea96; color: #000; text-decoration: none; display: block; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
         .download-btn:hover { background: #00c47e; }
-        .status-text { font-size: 12px; color: #ff007f; margin-top: 5px; display: none; }
+        .status-text { font-size: 12px; color: #ff007f; margin-top: 8px; display: none; }
     </style>
 </head>
 <body>
@@ -39,13 +39,13 @@
         <div style="color: #00ea96; font-weight: bold; margin-bottom: 10px;">🎯 Video Hazır!</div>
         <div id="videoTitle"></div>
         
-        <div id="downloadBtn" class="download-btn" onclick="startBlobDownload()">📥 Videoyu Cihaza İndir</div>
-        <div id="downloadStatus" class="status-text">Videolar indiriliyor, lütfen bekleyin...</div>
+        <div id="downloadBtn" class="download-btn" onclick="directDownload()">📥 Videoyu Cihaza İndir</div>
+        <div id="downloadStatus" class="status-text">İndirme başlatılıyor...</div>
     </div>
 </div>
 
 <script>
-    let globalDownloadUrl = "";
+    let rawVideoUrl = "";
 
     async function processVideo() {
         const link = document.getElementById('videoLink').value;
@@ -74,8 +74,8 @@
             if (data.success) {
                 resultDiv.style.display = 'block';
                 videoTitle.innerText = data.title;
-                // İndirme linkini hafızaya alıyoruz
-                globalDownloadUrl = `/proxy-download?url=${encodeURIComponent(data.download_url)}`;
+                // TikTok'un asıl video linkini doğrudan hafızaya alıyoruz
+                rawVideoUrl = data.download_url;
             } else {
                 alert(data.message);
             }
@@ -85,44 +85,35 @@
         }
     }
 
-    // MOBİLİ ZORLAYAN KESİN İNDİRME FONKSİYONU (BLOB SİSTEMİ)
-    async function startBlobDownload() {
+    // SUNUCUYU ARAYA SOKMADAN DİREKT TARAYICIYA İNDİRTEN SİSTEM
+    async function directDownload() {
         const statusText = document.getElementById('downloadStatus');
-        const downloadBtn = document.getElementById('downloadBtn');
-        
-        if (!globalDownloadUrl) return;
+        if (!rawVideoUrl) return;
 
         statusText.style.display = "block";
-        downloadBtn.style.pointerEvents = "none";
-        downloadBtn.style.opacity = "0.6";
-        statusText.innerText = "Videolar indiriliyor, lütfen bekleyin (Cihaza kaydediliyor)...";
+        statusText.innerText = "Bağlantı kuruluyor, lütfen bekleyin...";
 
         try {
-            // Videoyu tarayıcının kendi içine çekiyoruz (CORS engeli olmadan)
-            const response = await fetch(globalDownloadUrl);
+            // Sunucu üzerinden değil, direkt kullanıcının tarayıcısından videoyu çekiyoruz
+            const response = await fetch(rawVideoUrl);
             const blob = await response.blob();
-            
-            // Cihazın hafızasında sanal bir indirme tetikliyoruz
             const blobUrl = window.URL.createObjectURL(blob);
+            
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = blobUrl;
-            a.download = 'tiktok_video.mp4'; // Dosya adı zorlaması
+            a.download = 'tiktok_video.mp4';
             
             document.body.appendChild(a);
-            a.click(); // Otomatik tıklatıp indirmeyi başlatıyoruz
+            a.click();
             
-            // Belleği temizle
             window.URL.revokeObjectURL(blobUrl);
             document.body.removeChild(a);
-            
             statusText.innerText = "İndirme Başladı!";
         } catch (error) {
-            statusText.innerText = "Hata oluştu, tekrar deneyin.";
-            console.error(error);
-        } finally {
-            downloadBtn.style.pointerEvents = "auto";
-            downloadBtn.style.opacity = "1";
+            // Eğer tarayıcı doğrudan indirmeyi engellerse (CORS kilidi), güvenli şekilde yeni sekmede açtırıyoruz
+            statusText.innerText = "Video yeni sekmede açılıyor, basılı tutup kaydedebilirsiniz.";
+            window.open(rawVideoUrl, '_blank');
         }
     }
 </script>
