@@ -15,6 +15,7 @@
         button { width: 100%; padding: 15px; background: linear-gradient(45deg, #ff007f, #7f00ff); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; min-height: 50px; }
         button:active { transform: scale(0.98); }
         .loader { display: none; margin: 20px auto; border: 4px solid #f3f3f3; border-top: 4px solid #ff007f; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(3600deg); } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #result { margin-top: 25px; display: none; }
         #videoTitle { color: #eee; font-size: 14px; margin-bottom: 10px; font-style: italic; }
@@ -35,7 +36,7 @@
     <div id="result">
         <p style="color: #00ea96; font-weight: bold;">🎯 Video Hazır!</p>
         <div id="videoTitle"></div>
-        <a href="#" id="downloadLink" class="download-btn" target="_blank" download="tiktok_video.mp4">Videoyu İndir (Logosuz)</a>
+        <a href="#" id="downloadLink" class="download-btn">Videoyu Doğrudan İndir</a>
     </div>
 </div>
 
@@ -56,7 +57,6 @@
         resultDiv.style.display = 'none';
 
         try {
-            // Python backend'imize istek gönderiyoruz
             const response = await fetch('/fetch-video', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -64,14 +64,14 @@
             });
             
             const data = await response.json();
-
             loader.style.display = 'none';
 
             if (data.success) {
-                resultDiv.style.style = 'block';
                 resultDiv.style.display = 'block';
                 videoTitle.innerText = data.title;
-                downloadLink.href = data.download_url; // API'den gelen asıl mp4 linki
+                
+                // Arka plandaki Python indirme köprüsünü tetikleyen yeni link yapımız:
+                downloadLink.href = `/download-file?url=${encodeURIComponent(data.download_url)}`;
             } else {
                 alert(data.message);
             }
