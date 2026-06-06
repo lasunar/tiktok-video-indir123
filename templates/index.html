@@ -17,19 +17,20 @@
         .loader { display: none; margin: 20px auto; border: 4px solid #f3f3f3; border-top: 4px solid #ff007f; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #result { margin-top: 25px; display: none; }
-        #videoTitle { color: #eee; font-size: 14px; margin-bottom: 15px; font-style: italic; }
+        #videoTitle { color: #eee; font-size: 14px; margin-bottom: 10px; font-style: italic; }
         
-        .download-btn { background: #00ea96; color: #000; text-decoration: none; display: block; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; font-size: 16px; }
-        .download-btn:hover { background: #00c47e; }
-        .mobile-tip { background: rgba(255, 255, 255, 0.05); border-left: 4px solid #ff007f; padding: 12px; border-radius: 6px; text-align: left; margin-top: 20px; font-size: 13px; color: #ccc; line-height: 1.5; }
-        .mobile-tip strong { color: #00f2fe; }
+        /* Video Oynatıcı Tasarımı */
+        video { border-radius: 8px; margin-top: 10px; border: 2px solid #333; background: #000; }
+        
+        .mobile-tip { background: rgba(255, 255, 255, 0.05); border-left: 4px solid #00ea96; padding: 12px; border-radius: 6px; text-align: left; margin-top: 15px; font-size: 13px; color: #ccc; line-height: 1.5; }
+        .mobile-tip strong { color: #00ea96; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>TikTok Video İndir</h1>
-    <p>Video linkini yapıştırın ve indirin (Mobil & PC Uyumlu)</p>
+    <p>Video linkini yapıştırın ve indirin (Logosuz)</p>
     
     <input type="text" id="videoLink" placeholder="https://www.tiktok.com/@..." autocomplete="off">
     <button onclick="processVideo()">Videoyu Hazırla</button>
@@ -40,13 +41,12 @@
         <div style="color: #00ea96; font-weight: bold; margin-bottom: 10px;">🎯 Video Hazır!</div>
         <div id="videoTitle"></div>
         
-        <a href="#" id="downloadLink" target="_blank" class="download-btn">📥 Videoyu Aç ve İndir</a>
+        <video id="videoPlayer" width="100%" controls playsinline preload="metadata"></video>
         
         <div class="mobile-tip">
-            ℹ️ <strong>Nasıl Kaydedilir?</strong><br>
-            Butona bastığınızda video yeni bir sayfada açılacaktır. 
-            <br>• <strong>Android / PC:</strong> Videonun sağ altındaki <strong>üç noktaya</strong> basıp <strong>İndir</strong> deyin veya videonun üzerine basılı tutup kaydedin.
-            <br>• <strong>iPhone (Safari):</strong> Alttaki <strong>Paylaş</strong> butonuna basıp <strong>"Dosyalara Kaydet"</strong> seçeneğini kullanın.
+            ℹ️ <strong>Nasıl İndirilir?</strong><br>
+            • Telefondaysanız <strong>yukarıdaki videonun üzerine basılı tutarak</strong> "Videoyu Kaydet/İndir" diyebilirsiniz.<br>
+            • Bilgisayardaysanız videonun sağ altındaki <strong>üç noktaya (⋮)</strong> basıp indirebilirsiniz.
         </div>
     </div>
 </div>
@@ -56,7 +56,7 @@
         const link = document.getElementById('videoLink').value;
         const loader = document.getElementById('loading');
         const resultDiv = document.getElementById('result');
-        const downloadLink = document.getElementById('downloadLink');
+        const videoPlayer = document.getElementById('videoPlayer');
         const videoTitle = document.getElementById('videoTitle');
 
         if (!link) {
@@ -66,6 +66,10 @@
 
         loader.style.display = 'block';
         resultDiv.style.display = 'none';
+        
+        // Önceki videoyu temizliyoruz ki yenisiyle karışmasın
+        videoPlayer.pause();
+        videoPlayer.removeAttribute('src');
 
         try {
             const response = await fetch('/fetch-video', {
@@ -81,8 +85,9 @@
                 resultDiv.style.display = 'block';
                 videoTitle.innerText = data.title;
                 
-                // Hiçbir kısıtlamaya takılmayan doğrudan güvenli yönlendirme linki
-                downloadLink.href = data.download_url;
+                // Videoyu doğrudan kendi sitemizin oynatıcısına yüklüyoruz
+                videoPlayer.src = data.download_url;
+                videoPlayer.load();
             } else {
                 alert(data.message);
             }
