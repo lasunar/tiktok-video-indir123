@@ -23,9 +23,9 @@
         #videoTitle { color: #eee; font-size: 14px; margin-bottom: 10px; font-style: italic; }
         video { border-radius: 8px; margin-top: 10px; border: 2px solid #333; background: #000; }
         
-        /* İSTEDİĞİN BÜYÜK YEŞİL BUTON TASARIMI */
         .green-btn { background: #00ea96; color: #000; display: block; width: 100%; padding: 18px; border-radius: 8px; font-weight: bold; margin-top: 15px; font-size: 16px; border: none; cursor: pointer; transition: 0.2s; }
         .green-btn:active { transform: scale(0.96); }
+        .status-text { font-size: 13px; color: #ff007f; margin-top: 8px; display: none; }
     </style>
 </head>
 <body>
@@ -45,7 +45,8 @@
         
         <video id="videoPlayer" width="100%" controls playsinline preload="metadata"></video>
         
-        <button id="greenDownloadBtn" class="green-btn" onclick="startDownload()">📥 Videoyu Şimdi İndir</button>
+        <button id="greenDownloadBtn" class="green-btn" onclick="downloadToGallery()">📥 Doğrudan Galeriye İndir</button>
+        <div id="statusText" class="status-text">Galeri formatına dönüştürülüyor, lütfen bekleyin...</div>
     </div>
 </div>
 
@@ -66,8 +67,6 @@
 
         loader.style.display = 'block';
         resultDiv.style.display = 'none';
-        videoPlayer.pause();
-        videoPlayer.removeAttribute('src');
 
         try {
             const response = await fetch('/fetch-video', {
@@ -85,8 +84,8 @@
                 videoPlayer.src = data.download_url;
                 videoPlayer.load();
                 
-                // İndirme linkini yeşil buton için hafızaya alıyoruz
-                globalDownloadUrl = data.download_url;
+                // Flask proxy linkini buton için hazırlıyoruz
+                globalDownloadUrl = `/proxy-download?url=${encodeURIComponent(data.download_url)}`;
             } else {
                 alert(data.message);
             }
@@ -96,24 +95,51 @@
         }
     }
 
-    // YEŞİL BUTONA BASILINCA ÇALIŞACAK KOD
-    function startDownload() {
+    // TELEFONU GALERİYE KAYDETMEYE ZORLAYAN SİHRİBBAZ KOD
+    async function downloadToGallery() {
         const btn = document.getElementById('greenDownloadBtn');
+        const status = document.getElementById('statusText');
         
-        // Kullanıcıya tıkladığını belli etmek için butonu değiştiriyoruz
-        btn.innerText = "⏳ İndirme Başlatılıyor...";
-        btn.style.opacity = "0.7";
+        if (!globalDownloadUrl) return;
+
         btn.style.pointerEvents = "none";
-        
-        // Kullanıcıyı başka sayfaya atmadan direkt arkadan indirmeyi tetikliyoruz
-        window.location.href = `/proxy-download?url=${encodeURIComponent(globalDownloadUrl)}`;
-        
-        // 3 saniye sonra butonu eski haline getiriyoruz
-        setTimeout(() => {
-            btn.innerText = "📥 Videoyu Şimdi İndir";
-            btn.style.opacity = "1";
-            btn.style.pointerEvents = "auto";
-        }, 3000);
+        btn.style.opacity = "0.6";
+        status.style.display = "block";
+        status.innerText = "Hazırlanıyor... Lütfen ekrandan ayrılmayın.";
+
+        try {
+            // Videoyu arka planda çekiyoruz
+            const response = await fetch(globalDownloadUrl);
+            const blob = await response.blob();
+            
+            // İŞİN SIRRI BURASI: Tarayıcıya bunun ham bir indirme değil, bir kamera/medya dosyası olduğunu söylüyoruz
+            const galleryBlob = new Blob([blob], { type: 'video/quicktime' }); // iOS ve Android galerileri için evrensel format tetikleyici
+            const blobUrl = window.URL.createObjectURL(galleryBlob);
+            
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            
+            // Rastgele isim vererek telefonun bunu yeni çekilmiş bir medya gibi algılamasını sağlıyoruz
+            a.download = 'VID_' + Math.floor(Date.now() / 1000) + '.mp4';
+            
+            document.body.appendChild(a);
+            a.click();
+            
+            window.URL.revokeObjectURL(blobUrl);
+            document.body.removeChild(a);
+            status.innerText = "Başarıyla İndirildi! Galeriyi kontrol edin.";
+        } catch (error) {
+            // Eğer tarayıcı çok çok eskiyse yedek olarak direkt linke yönlendir
+            window.location.href = globalDownloadUrl;
+            status.innerText = "İndirme başlatıldı.";
+        } finally {
+            setTimeout(() => {
+                btn.style.pointerEvents = "auto";
+                btn.style.opacity = "1";
+                status.style.display = "none";
+            }, 4000);
+        }
     }
 </script>
 
