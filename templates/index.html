@@ -18,10 +18,12 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #result { margin-top: 25px; display: none; }
         #videoTitle { color: #eee; font-size: 14px; margin-bottom: 10px; font-style: italic; }
-        .download-btn { background: #00ea96; color: #000; text-decoration: none; display: block; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; }
         
-        /* Mobil İpuçları Alanı */
-        .mobile-tip { display: none; background: rgba(255, 255, 255, 0.05); border-left: 4px solid #ff007f; padding: 12px; border-radius: 6px; text-align: left; margin-top: 20px; font-size: 13px; color: #ccc; line-height: 1.5; }
+        /* Buton Tasarımları */
+        .btn-pc { background: #00ea96; color: #000; text-decoration: none; display: block; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; }
+        .btn-mobil { background: #00bfff; color: #fff; text-decoration: none; display: block; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; }
+        
+        .mobile-tip { background: rgba(255, 255, 255, 0.05); border-left: 4px solid #ff007f; padding: 12px; border-radius: 6px; text-align: left; margin-top: 20px; font-size: 13px; color: #ccc; line-height: 1.5; }
         .mobile-tip strong { color: #00f2fe; }
     </style>
 </head>
@@ -39,10 +41,12 @@
     <div id="result">
         <p style="color: #00ea96; font-weight: bold;">🎯 Video Hazır!</p>
         <div id="videoTitle"></div>
-        <a href="#" id="downloadLink" class="download-btn">Videoyu İndir (Logosuz)</a>
         
-        <div class="mobile-tip" id="mobileTip">
-            ℹ️ <strong>Mobil Kullanıcı Notu:</strong> Açılan sayfada videonun üzerine <strong>basılı tutarak kaydet</strong> diyebilirsiniz. iPhone'da ise alttaki paylaş butonundan <strong>Dosyalara Kaydet</strong> yapabilirsiniz.
+        <a href="#" id="pcDownloadLink" class="btn-pc">💻 Bilgisayardan İndir (Direkt İndirme)</a>
+        <a href="#" id="mobileDownloadLink" target="_blank" class="btn-mobil">📱 Telefondan İndir (Yeni Sekmede Aç)</a>
+        
+        <div class="mobile-tip">
+            ℹ️ <strong>Telefon Kullananlar İçin:</strong> Mavi butona basın, video açılınca üzerine <strong>basılı tutup "Videoyu Kaydet"</strong> deyin. iPhone/Safari'de ise alttaki <strong>Paylaş</strong> butonundan <strong>"Dosyalara Kaydet"</strong> yapabilirsiniz.
         </div>
     </div>
 </div>
@@ -52,9 +56,9 @@
         const link = document.getElementById('videoLink').value;
         const loader = document.getElementById('loading');
         const resultDiv = document.getElementById('result');
-        const downloadLink = document.getElementById('downloadLink');
+        const pcDownloadLink = document.getElementById('pcDownloadLink');
+        const mobileDownloadLink = document.getElementById('mobileDownloadLink');
         const videoTitle = document.getElementById('videoTitle');
-        const mobileTip = document.getElementById('mobileTip');
 
         if (!link) {
             alert('Lütfen bir TikTok linki yapıştırın!');
@@ -78,20 +82,11 @@
                 resultDiv.style.display = 'block';
                 videoTitle.innerText = data.title;
                 
-                // KULLANICI CİHAZINI KONTROL EDİYORUZ (Mobil mi PC mi?)
-                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                // Yeşil buton (PC için): Bizim yazdığımız indirme köprüsüne gider, tık diye indirir.
+                pcDownloadLink.href = `/download-file?url=${encodeURIComponent(data.download_url)}`;
                 
-                if (isMobile) {
-                    // Telefondaysa: Eski sistem gibi yeni sekmede asıl video linkini açıp izletecek ve kaydettirecek
-                    downloadLink.href = data.download_url;
-                    downloadLink.target = "_blank";
-                    mobileTip.style.display = "block"; // Mobil uyarı kutusunu göster
-                } else {
-                    // Bilgisayardaysa: Senin tıkır tıkır çalışan direkt indirme köprünü tetikleyecek
-                    downloadLink.href = `/download-file?url=${encodeURIComponent(data.download_url)}`;
-                    downloadLink.removeAttribute('target');
-                    mobileTip.style.display = "none"; // PC'de uyarıya gerek yok
-                }
+                // Mavi buton (Mobil için): Doğrudan asıl video linkini yeni sekmede açar, asla takılmaz.
+                mobileDownloadLink.href = data.download_url;
                 
             } else {
                 alert(data.message);
