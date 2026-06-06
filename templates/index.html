@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Video İndirici</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: #121212; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .container { background: #1e1e1e; padding: 30px; border-radius: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); width: 100%; max-width: 500px; text-align: center; }
+        h1 { font-size: 24px; margin-bottom: 10px; background: linear-gradient(45deg, #00f2fe, #4facfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p { color: #aaa; font-size: 14px; margin-bottom: 25px; }
+        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #333; border-radius: 8px; background: #252525; color: #fff; font-size: 16px; outline: none; margin-bottom: 20px; }
+        input[type="text"]:focus { border-color: #00f2fe; }
+        button { width: 100%; padding: 15px; background: linear-gradient(45deg, #ff007f, #7f00ff); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; min-height: 50px; }
+        button:active { transform: scale(0.98); }
+        .loader { display: none; margin: 20px auto; border: 4px solid #f3f3f3; border-top: 4px solid #ff007f; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #result { margin-top: 25px; display: none; }
+        #videoTitle { color: #eee; font-size: 14px; margin-bottom: 10px; font-style: italic; }
+        .download-btn { background: #00ea96; color: #000; text-decoration: none; display: block; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>TikTok Video İndir</h1>
+    <p>Video linkini yapıştırın ve indirin (Mobil & PC Uyumlu)</p>
+    
+    <input type="text" id="videoLink" placeholder="https://www.tiktok.com/@..." autocomplete="off">
+    <button onclick="processVideo()">Videoyu Hazırla</button>
+    
+    <div class="loader" id="loading"></div>
+
+    <div id="result">
+        <p style="color: #00ea96; font-weight: bold;">🎯 Video Hazır!</p>
+        <div id="videoTitle"></div>
+        <a href="#" id="downloadLink" class="download-btn" target="_blank" download="tiktok_video.mp4">Videoyu İndir (Logosuz)</a>
+    </div>
+</div>
+
+<script>
+    async function processVideo() {
+        const link = document.getElementById('videoLink').value;
+        const loader = document.getElementById('loading');
+        const resultDiv = document.getElementById('result');
+        const downloadLink = document.getElementById('downloadLink');
+        const videoTitle = document.getElementById('videoTitle');
+
+        if (!link) {
+            alert('Lütfen bir TikTok linki yapıştırın!');
+            return;
+        }
+
+        loader.style.display = 'block';
+        resultDiv.style.display = 'none';
+
+        try {
+            // Python backend'imize istek gönderiyoruz
+            const response = await fetch('/fetch-video', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: link })
+            });
+            
+            const data = await response.json();
+
+            loader.style.display = 'none';
+
+            if (data.success) {
+                resultDiv.style.style = 'block';
+                resultDiv.style.display = 'block';
+                videoTitle.innerText = data.title;
+                downloadLink.href = data.download_url; // API'den gelen asıl mp4 linki
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            loader.style.display = 'none';
+            alert('Bir hata oluştu, lütfen tekrar deneyin.');
+        }
+    }
+</script>
+
+</body>
+</html>
